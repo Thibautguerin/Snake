@@ -1,0 +1,147 @@
+#!/usr/bin/python3
+
+from math import *
+from random import *
+import os
+import contextlib
+with contextlib.redirect_stdout(None):
+	import pygame
+	from pygame.locals import *
+
+snake = [[380, 380]]
+food = [randint(0, 39) * 20, randint(0, 39) * 20]
+score = 0
+
+def display_score(window):
+	myfont = pygame.font.SysFont("monospace", 400, True)
+	myfont1 = pygame.font.SysFont("monospace", 50, True)
+	
+	if (os.path.isfile(".snakehs") is False):
+		wfile = open(".snakehs", "w")
+		wfile.write("0")
+		wfile.close()
+	
+	rfile = open(".snakehs", "r")
+	hs = rfile.read()
+	
+	if (int(hs) < score):
+		wfile = open(".snakehs", "w")
+		wfile.write(str(score))
+		hs = str(score)
+		wfile.close()
+	display_score = myfont.render(str(score), 1, (60,60,60))
+	display_hscore = myfont1.render("HS:" + hs, 1, (60,60,60))
+
+	window.blit(display_hscore, (800 / 2 - display_hscore.get_rect().width / 2, 150))
+	window.blit(display_score, (800 / 2 - display_score.get_rect().width / 2, 800 / 2 - display_score.get_rect().height / 2))
+	pygame.display.update()
+	rfile.close()
+
+def verif_colision():
+	i = 0
+
+	while (i != len(snake)):
+		if (snake[i] == snake[len(snake) - 1] and i != len(snake) - 1):
+			return (False)
+		i = i + 1
+	return (True)
+
+
+def verif_position(x, y):
+	i = 0
+	global food
+	global score
+	if (x >= 800):
+		x = 0
+	if (x < 0):
+		x = 780
+	if (y >= 800):
+		y = 0
+	if (y < 0):
+		y = 780
+
+	while (i != len(snake)):
+		if ((x == food[0] and y == food[1]) or (food[0] == snake[i][0] and food[1] == snake[i][1])):
+			snake.reverse()
+			snake.append(snake[len(snake) - 1])
+			snake.reverse()
+			score = score + 1
+			food = [randint(0, 39) * 20, randint(0, 39) * 20]
+			i = -1
+		i = i + 1
+	return ([x, y])
+
+def deplacement(direction):
+	x = 0
+	y = 0
+
+	if (direction == 1):
+		x = snake[len(snake) - 1][0]
+		y = snake[len(snake) - 1][1] - 20
+	elif (direction == 2):
+		x = snake[len(snake) - 1][0] + 20
+		y = snake[len(snake) - 1][1]
+	elif (direction == 3):
+		x = snake[len(snake) - 1][0]
+		y = snake[len(snake) - 1][1] + 20
+	elif (direction == 4):
+		x = snake[len(snake) - 1][0] - 20
+		y = snake[len(snake) - 1][1]
+	else:
+		return (1)
+	snake.append(verif_position(x, y))
+	del(snake[0])
+	return (0)
+
+def game(window, direction):
+	i = 0
+
+	pygame.draw.rect(window, (33, 33, 33), (0, 0, 800, 800))
+	display_score(window)
+	pygame.draw.rect(window, (255, 0, 0), (food[0] + 3, food[1] + 3, 14, 14))
+	if (deplacement(direction) == 1):
+		pygame.draw.rect(window, (0,150,0), (snake[0][0] + 1, snake[0][1] + 1, 18, 18))
+		pygame.display.update()
+		return (direction)
+	while (i != len(snake)):
+		if (i == len(snake) - 1):
+			pygame.draw.rect(window, (0,150,0), (snake[i][0] + 1, snake[i][1] + 1, 18, 18))
+		else:
+			pygame.draw.rect(window, (0,255,0), (snake[i][0] + 1, snake[i][1] + 1, 18, 18))
+		i = i + 1
+
+	pygame.display.update()
+	return (direction)
+
+def main():
+	going = True
+
+	pygame.init()
+	clockFps = pygame.time.Clock()
+	pygame.display.set_caption("SNAKE")
+	window = pygame.display.set_mode((800, 800))
+
+	direction = 0
+
+	while (going == True):
+		direction = game(window, direction)
+		clockFps.tick(12)
+		going = verif_colision()
+		for event in pygame.event.get():
+			if (event.type == QUIT):
+				going = False
+			if (event.type == KEYDOWN):
+				if (event.key == K_ESCAPE):
+					going = False
+				if (event.key == K_UP and direction != 3):
+					direction = 1
+				elif (event.key == K_RIGHT and direction != 4):
+					direction = 2
+				elif (event.key == K_DOWN and direction != 1):
+					direction = 3
+				elif (event.key == K_LEFT and direction != 2):
+					direction = 4
+	pygame.quit()
+	return (0)
+
+main()
